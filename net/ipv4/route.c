@@ -2052,7 +2052,11 @@ static int ip_route_input_slow(struct sk_buff *skb, __be32 daddr, __be32 saddr,
 		fl4.fl4_dport = 0;
 	}
 
-	err = fib_lookup(net, &fl4, res, 0);
+	if (res->table)
+		err = fib_table_lookup(res->table, &fl4, res, 0);
+	else
+		err = fib_lookup(net, &fl4, res, 0);
+
 	if (err != 0) {
 		if (!IN_DEV_FORWARD(in_dev))
 			err = -EHOSTUNREACH;
@@ -2188,6 +2192,7 @@ int ip_route_input_noref(struct sk_buff *skb, __be32 daddr, __be32 saddr,
 	int err;
 
 	tos &= IPTOS_RT_MASK;
+	res.table = NULL;
 	rcu_read_lock();
 	err = ip_route_input_rcu(skb, daddr, saddr, tos, dev, &res);
 	rcu_read_unlock();
