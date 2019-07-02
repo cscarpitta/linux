@@ -399,6 +399,37 @@ drop:
 	return -EINVAL;
 }
 
+static int input_action_end_dt4(struct sk_buff *skb,
+				struct seg6_local_lwt *slwt)
+{
+	struct iphdr *iph;
+	int err;
+
+	if (!decap_and_validate(skb, IPPROTO_IPIP))
+		goto drop;
+
+	if (!pskb_may_pull(skb, sizeof(struct iphdr)))
+		goto drop;
+
+	skb->protocol = htons(ETH_P_IP);
+
+	skb_set_transport_header(skb, sizeof(struct iphdr));
+
+	iph = ip_hdr(skb);
+
+	skb_dst_drop(skb);
+
+	err = ip_route_input_lookup(skb, iph->daddr, iph->saddr, 0, skb->dev, slwt->table);
+	if (err)
+		goto drop;
+
+	return dst_input(skb);
+
+drop:
+	kfree_skb(skb);
+	return -EINVAL;
+}
+
 /* push an SRH on top of the current one */
 static int input_action_end_b6(struct sk_buff *skb, struct seg6_local_lwt *slwt)
 {
@@ -571,6 +602,11 @@ static struct seg6_action_desc seg6_action_table[] = {
 		.action		= SEG6_LOCAL_ACTION_END_DT6,
 		.attrs		= (1 << SEG6_LOCAL_TABLE),
 		.input		= input_action_end_dt6,
+	},
+	{
+		.action		= SEG6_LOCAL_ACTION_END_DT4,
+		.attrs		= (1 << SEG6_LOCAL_TABLE),
+		.input		= input_action_end_dt4,
 	},
 	{
 		.action		= SEG6_LOCAL_ACTION_END_B6,
