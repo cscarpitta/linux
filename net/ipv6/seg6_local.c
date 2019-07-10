@@ -528,25 +528,25 @@ unicast_input:
 	rth->dst.input = ip_forward;
 
 	if (res.fi) {
-		struct fib_nh_common *nhc = FIB_RES_NHC(*res);
+		struct fib_nh_common *nhc = FIB_RES_NHC(res);
 
 		if (nhc->nhc_gw_family && nhc->nhc_scope == RT_SCOPE_LINK) {
-			rt->rt_gw_family = nhc->nhc_gw_family;
+			rth->rt_gw_family = nhc->nhc_gw_family;
 			/* only INET and INET6 are supported */
 			if (likely(nhc->nhc_gw_family == AF_INET))
-				rt->rt_gw4 = nhc->nhc_gw.ipv4;
+				rth->rt_gw4 = nhc->nhc_gw.ipv4;
 			else
-				rt->rt_gw6 = nhc->nhc_gw.ipv6;
+				rth->rt_gw6 = nhc->nhc_gw.ipv6;
 		}
 
-		rt->dst.lwtstate = lwtstate_get(nhc->nhc_lwtstate);
+		rth->dst.lwtstate = lwtstate_get(nhc->nhc_lwtstate);
 	}
 
 	lwtunnel_set_redirect(&rth->dst);
 
 	goto out;
 
-local_input
+local_input:
 	rth = rt_dst_alloc(net->loopback_dev,
 		   RTCF_LOCAL, RTN_LOCAL,
 		   IN_DEV_CONF_GET(in_dev, NOPOLICY), false, false);
