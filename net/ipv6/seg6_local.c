@@ -503,13 +503,12 @@ brd_forward:
 		struct fib_nh_common *nhc = FIB_RES_NHC(res);
 		if (nhc->nhc_gw_family && nhc->nhc_scope == RT_SCOPE_LINK) {
 			rth->rt_gw_family = nhc->nhc_gw_family;
-			rth->rt_uses_gateway = 1;
-		}
 
-		if (likely(nhc->nhc_gw_family == AF_INET))
-			rt->rt_gw4 = nhc->nhc_gw.ipv4;
-		else
-			rt->rt_gw6 = nhc->nhc_gw.ipv6;
+			if (likely(nhc->nhc_gw_family == AF_INET))
+				rt->rt_gw4 = nhc->nhc_gw.ipv4;
+			else
+				rt->rt_gw6 = nhc->nhc_gw.ipv6;
+		}
 
 		rth->dst.lwtstate = lwtstate_get(nhc->nhc_lwtstate);
 	}
