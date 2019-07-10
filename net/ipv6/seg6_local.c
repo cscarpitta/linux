@@ -505,9 +505,9 @@ brd_forward:
 			rth->rt_gw_family = nhc->nhc_gw_family;
 
 			if (likely(nhc->nhc_gw_family == AF_INET))
-				rt->rt_gw4 = nhc->nhc_gw.ipv4;
+				rth->rt_gw4 = nhc->nhc_gw.ipv4;
 			else
-				rt->rt_gw6 = nhc->nhc_gw.ipv6;
+				rth->rt_gw6 = nhc->nhc_gw.ipv6;
 		}
 
 		rth->dst.lwtstate = lwtstate_get(nhc->nhc_lwtstate);
