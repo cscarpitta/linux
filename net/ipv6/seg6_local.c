@@ -501,16 +501,12 @@ brd_forward:
 
 	if (res.fi) {
 		struct fib_nh_common *nhc = FIB_RES_NHC(res);
-		if (nhc->nhc_gw_family && nhc->nhc_scope == RT_SCOPE_LINK) {
-			rth->rt_gw_family = nhc->nhc_gw_family;
-
-			if (likely(nhc->nhc_gw_family == AF_INET))
-				rth->rt_gw4 = nhc->nhc_gw.ipv4;
-			else
-				rth->rt_gw6 = nhc->nhc_gw.ipv6;
-		}
 
 		rth->dst.lwtstate = lwtstate_get(nhc->nhc_lwtstate);
+		if (lwtunnel_input_redirect(rth->dst.lwtstate)) {
+			rth->dst.lwtstate->orig_input = rth->dst.input;
+			rth->dst.input = lwtunnel_input;
+		}
 	}
 
 	lwtunnel_set_redirect(&rth->dst);
@@ -532,7 +528,7 @@ unicast_input:
 	rth->dst.input = ip_forward;
 
 	if (res.fi) {
-		struct fib_nh *nh = &FIB_RES_NH(res);
+		struct fib_nh_common *nhc = FIB_RES_NHC(res);
 		if (nh->nh_gw && nh->nh_scope == RT_SCOPE_LINK) {
 			rth->rt_gateway = nh->nh_gw;
 			rth->rt_uses_gateway = 1;
@@ -558,9 +554,9 @@ local_input
 	rth->dst.input = ip_local_deliver;
 
 	if (res.fi) {
-		struct fib_nh *nh = &FIB_RES_NH(res);
+		struct fib_nh_common *nhc = FIB_RES_NHC(res);
 
-		rth->dst.lwtstate = lwtstate_get(nh->nh_lwtstate);
+		rth->dst.lwtstate = lwtstate_get(nhc->nhc_lwtstate);
 		if (lwtunnel_input_redirect(rth->dst.lwtstate)) {
 			rth->dst.lwtstate->orig_input = rth->dst.input;
 			rth->dst.input = lwtunnel_input;
@@ -580,9 +576,9 @@ brd_input:
 	rth->dst.input = ip_local_deliver;
 
 	if (res.fi) {
-		struct fib_nh *nh = &FIB_RES_NH(res);
+		struct fib_nh_common *nhc = FIB_RES_NHC(res);
 
-		rth->dst.lwtstate = lwtstate_get(nh->nh_lwtstate);
+		rth->dst.lwtstate = lwtstate_get(nhc->nhc_lwtstate);
 		if (lwtunnel_input_redirect(rth->dst.lwtstate)) {
 			rth->dst.lwtstate->orig_input = rth->dst.input;
 			rth->dst.input = lwtunnel_input;
