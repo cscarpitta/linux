@@ -528,16 +528,18 @@ unicast_input:
 	rth->dst.input = ip_forward;
 
 	if (res.fi) {
-		struct fib_nh_common *nhc = FIB_RES_NHC(res);
-		if (nh->nh_gw && nh->nh_scope == RT_SCOPE_LINK) {
-			rth->rt_gateway = nh->nh_gw;
-			rth->rt_uses_gateway = 1;
+		struct fib_nh_common *nhc = FIB_RES_NHC(*res);
+
+		if (nhc->nhc_gw_family && nhc->nhc_scope == RT_SCOPE_LINK) {
+			rt->rt_gw_family = nhc->nhc_gw_family;
+			/* only INET and INET6 are supported */
+			if (likely(nhc->nhc_gw_family == AF_INET))
+				rt->rt_gw4 = nhc->nhc_gw.ipv4;
+			else
+				rt->rt_gw6 = nhc->nhc_gw.ipv6;
 		}
 
-		if (!rth->rt_gateway)
-			rth->rt_gateway = iph->daddr;
-
-		rth->dst.lwtstate = lwtstate_get(nh->nh_lwtstate);
+		rt->dst.lwtstate = lwtstate_get(nhc->nhc_lwtstate);
 	}
 
 	lwtunnel_set_redirect(&rth->dst);
