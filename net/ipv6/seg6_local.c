@@ -500,16 +500,18 @@ brd_forward:
 	rth->dst.input = ip_forward;
 
 	if (res.fi) {
-		struct fib_nh *nh = &FIB_RES_NH(res);
-		if (nh->nh_gw && nh->nh_scope == RT_SCOPE_LINK) {
-			rth->rt_gateway = nh->nh_gw;
+		struct fib_nh_common *nhc = &FIB_RES_NHC(res);
+		if (nhc->nhc_gw_family && nhc->nhc_scope == RT_SCOPE_LINK) {
+			rth->rt_gw_family = nhc->nhc_gw_family;
 			rth->rt_uses_gateway = 1;
 		}
 
-		if (!rth->rt_gateway)
-			rth->rt_gateway = iph->daddr;
+		if (likely(nhc->nhc_gw_family == AF_INET))
+			rt->rt_gw4 = nhc->nhc_gw.ipv4;
+		else
+			rt->rt_gw6 = nhc->nhc_gw.ipv6;
 
-		rth->dst.lwtstate = lwtstate_get(nh->nh_lwtstate);
+		rth->dst.lwtstate = lwtstate_get(nhc->nhc_lwtstate);
 	}
 
 	lwtunnel_set_redirect(&rth->dst);
