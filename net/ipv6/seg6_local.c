@@ -447,10 +447,17 @@ static int seg6_table4_lookup(struct sk_buff *skb, u32 tbl_id)
 	}
 
 	/* Route the packet */
-	fl4.flowi4_tos = iph->tos & IPTOS_RT_MASK;
+	u32 tos = 0;
+	tos &= IPTOS_RT_MASK;
+	fl4.flowi4_oif = 0;
+	fl4.flowi4_iif = skb->dev->ifindex;
+	fl4.flowi4_mark = skb->mark;
+	fl4.flowi4_tos = tos;
+	fl4.flowi4_scope = RT_SCOPE_UNIVERSE;
 	fl4.flowi4_flags = 0;
 	fl4.daddr = iph->daddr;
 	fl4.saddr = iph->saddr;
+	fl4.flowi4_uid = sock_net_uid(net, NULL);
 
 	/* Get routing table */
 	table = fib_get_table(net, tbl_id);
